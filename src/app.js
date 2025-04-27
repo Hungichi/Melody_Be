@@ -8,6 +8,7 @@ const swaggerDocument = require('../swagger.json');
 const authRoutes = require('./routes/authRoutes');
 const songRoutes = require('./routes/songRoutes');
 const artistRequestRoutes = require('./routes/artistRequestRoutes');
+const playlistRoutes = require('./routes/playlistRoutes');
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use('/api/auth', authRoutes);
 app.use('/api/songs', songRoutes);
 app.use('/api/artist-requests', artistRequestRoutes);
+app.use('/api/playlists', playlistRoutes);
 
 // Welcome route
 app.get('/', (req, res) => {

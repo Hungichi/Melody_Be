@@ -52,7 +52,8 @@ const userSchema = new mongoose.Schema({
   }],
   playlists: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Playlist'
+    ref: 'Playlist',
+    default: []
   }],
   resetPasswordToken: String,
   resetPasswordExpire: Date,

@@ -2,6 +2,7 @@ const Song = require('../models/Song');
 const cloudinary = require('../config/cloudinary');
 const fs = require('fs');
 const User = require('../models/User');
+const Playlist = require('../models/Playlist');
 
 // Upload file to Cloudinary
 const uploadToCloudinary = async (file, options = {}) => {
@@ -325,7 +326,6 @@ exports.deleteSong = async (req, res) => {
 exports.toggleLike = async (req, res) => {
     try {
         const song = await Song.findById(req.params.id);
-
         if (!song) {
             return res.status(404).json({
                 success: false,
@@ -333,18 +333,54 @@ exports.toggleLike = async (req, res) => {
             });
         }
 
-        // Check if user already liked the song
-        const index = song.likes.indexOf(req.user._id);
-        if (index === -1) {
-            song.likes.push(req.user._id);
-        } else {
-            song.likes.splice(index, 1);
+        const user = await User.findById(req.user._id).populate('playlists');
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
         }
 
+        // Tìm playlist "Yêu thích" của user, nếu chưa có thì tạo mới
+        let favoritePlaylist = user.playlists.find(p => p.name === 'Yêu thích');
+        if (!favoritePlaylist) {
+            favoritePlaylist = await Playlist.create({
+                name: 'Yêu thích',
+                user: user._id,
+                songs: []
+            });
+            user.playlists.push(favoritePlaylist._id);
+            await user.save();
+        } else if (favoritePlaylist._id) {
+            // Nếu lấy từ populate thì là object, cần refetch để thao tác
+            favoritePlaylist = await Playlist.findById(favoritePlaylist._id);
+        }
+
+        // Check if user already liked the song
+        const likeIndex = song.likes.indexOf(req.user._id);
+        const songIndexInPlaylist = favoritePlaylist.songs.findIndex(sid => sid.toString() === song._id.toString());
+        let liked;
+        if (likeIndex === -1) {
+            song.likes.push(req.user._id);
+            liked = true;
+            // Thêm vào playlist nếu chưa có
+            if (songIndexInPlaylist === -1) {
+                favoritePlaylist.songs.push(song._id);
+            }
+        } else {
+            song.likes.splice(likeIndex, 1);
+            liked = false;
+            // Xóa khỏi playlist nếu có
+            if (songIndexInPlaylist !== -1) {
+                favoritePlaylist.songs.splice(songIndexInPlaylist, 1);
+            }
+        }
         await song.save();
+        await favoritePlaylist.save();
 
         res.status(200).json({
             success: true,
+            liked,
             data: song
         });
     } catch (error) {
@@ -527,4 +563,27 @@ exports.getGenres = async (req, res) => {
       message: 'Đã có lỗi xảy ra khi lấy danh sách thể loại'
     });
   }
+};
+
+// Lấy playlist "Yêu thích" của user hiện tại
+exports.getFavoritePlaylist = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id).populate({
+            path: 'playlists',
+            populate: { path: 'songs', select: 'title artist coverImageUrl' }
+        });
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        let favoritePlaylist = user.playlists.find(p => p.name === 'Yêu thích');
+        if (!favoritePlaylist) {
+            return res.status(404).json({ success: false, message: 'Bạn chưa có playlist Yêu thích' });
+        }
+        res.status(200).json({
+            success: true,
+            data: favoritePlaylist
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
 };

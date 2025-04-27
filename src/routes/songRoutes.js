@@ -14,6 +14,7 @@ const {
     getTrendingSongs,
     searchSongs,
     getGenres,
+    getFavoritePlaylist,
 } = require('../controllers/songController');
 
 // Cấu hình multer cho upload song
@@ -66,10 +67,12 @@ router.get('/search', searchSongs);
 router.get('/genres', getGenres);
 router.get('/trending', getTrendingSongs);
 router.get('/', getAllSongs);
-router.get('/:id', getSong);
 
 // Protected routes
 router.use(protect);
+
+// Lấy playlist yêu thích của user (phải đặt trước /:id)
+router.get('/favorite-playlist', getFavoritePlaylist);
 
 // Like and comment routes
 router.post('/:id/like', toggleLike);
@@ -79,5 +82,8 @@ router.post('/:id/comments', addComment);
 router.post('/', authorize('artist', 'admin'), uploadFields, createSong);
 router.put('/:id', authorize('artist', 'admin'), uploadFields, updateSong);
 router.delete('/:id', authorize('artist', 'admin'), deleteSong);
+
+// Route này phải ở cuối cùng!
+router.get('/:id', getSong);
 
 module.exports = router;
