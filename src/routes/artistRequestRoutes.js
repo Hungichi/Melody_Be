@@ -2,7 +2,9 @@ const express = require('express');
 const router = express.Router();
 const { protect, authorize } = require('../middleware/authMiddleware');
 const multer = require('multer');
-const path = require('path');
+const upload = multer({ storage: multer.memoryStorage() });
+const streamifier = require('streamifier');
+const cloudinary = require('../config/cloudinary');
 
 const { 
   createArtistRequest, 
@@ -12,48 +14,35 @@ const {
   updateArtistRequest
 } = require('../controllers/artistRequestController');
 
-// Cấu hình multer cơ bản nhất để test
-const upload = multer({
-  dest: 'uploads/',
-  limits: {
-    fileSize: 2 * 1024 * 1024, // 2MB
-    fieldSize: 2 * 1024 * 1024 // 2MB cho các trường khác
-  }
-});
-
-// Middleware xử lý upload đơn giản hóa
-const handleUpload = (req, res, next) => {
-  upload.single('profileImage')(req, res, function(err) {
-    // Log để debug
-    console.log('Request Headers:', req.headers);
-    console.log('Content Type:', req.get('content-type'));
-    console.log('Request Body:', req.body);
-    console.log('Request File:', req.file);
-
+// Middleware xử lý upload và đẩy buffer lên Cloudinary
+const handleUpload = async (req, res, next) => {
+  upload.single('profileImage')(req, res, async function(err) {
     if (err) {
-      console.error('Upload Error:', err);
-      return res.status(400).json({
-        success: false,
-        message: err.message
-      });
+      return res.status(400).json({ success: false, message: err.message });
     }
-
     if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: 'Vui lòng tải lên ảnh đại diện'
-      });
+      return res.status(400).json({ success: false, message: 'Vui lòng tải lên ảnh đại diện' });
     }
-
-    // Kiểm tra mime type
-    if (!req.file.mimetype.startsWith('image/')) {
-      return res.status(400).json({
-        success: false,
-        message: 'Chỉ chấp nhận file ảnh'
-      });
+    // Upload buffer lên Cloudinary
+    try {
+      const streamUpload = () => {
+        return new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            { folder: 'profile_images', width: 400, height: 400, crop: 'fill', quality: 'auto' },
+            (error, result) => {
+              if (result) resolve(result);
+              else reject(error);
+            }
+          );
+          streamifier.createReadStream(req.file.buffer).pipe(stream);
+        });
+      };
+      const result = await streamUpload();
+      req.file.cloudinaryUrl = result.secure_url;
+      next();
+    } catch (error) {
+      return res.status(400).json({ success: false, message: 'Lỗi khi tải ảnh lên Cloudinary.' });
     }
-
-    next();
   });
 };
 
@@ -62,6 +51,6 @@ router.post('/', protect, handleUpload, createArtistRequest);
 router.get('/', protect, authorize('admin'), getAllRequests);
 router.patch('/:requestId', protect, authorize('admin'), updateRequestStatus);
 router.get('/me', protect, getUserRequest);
-router.put('/:requestId', protect, upload.single('profileImage'), updateArtistRequest);
+router.put('/:requestId', protect, handleUpload, updateArtistRequest);
 
 module.exports = router; 

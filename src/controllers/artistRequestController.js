@@ -29,43 +29,8 @@ exports.createArtistRequest = async (req, res) => {
       });
     }
 
-    // Upload ảnh lên Cloudinary
-    let profileImageUrl;
-    try {
-      // Log để debug
-      console.log('File info before upload:', {
-        path: req.file.path,
-        mimetype: req.file.mimetype,
-        size: req.file.size
-      });
-
-      const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: 'profile_images',
-        width: 400,
-        height: 400,
-        crop: 'fill',
-        quality: 'auto'
-      });
-
-      console.log('Cloudinary upload result:', result);
-      
-      profileImageUrl = result.secure_url;
-      
-      // Xóa file tạm sau khi upload thành công
-      fs.unlink(req.file.path, (err) => {
-        if (err) {
-          console.error('Error deleting temp file:', err);
-        } else {
-          console.log('Temp file deleted successfully');
-        }
-      });
-    } catch (error) {
-      console.error('Detailed Cloudinary error:', error);
-      return res.status(400).json({
-        success: false,
-        message: 'Lỗi khi tải ảnh lên Cloudinary. Vui lòng thử lại.'
-      });
-    }
+    // Lấy url ảnh từ middleware
+    const profileImageUrl = req.file.cloudinaryUrl;
 
     // Tạo artist request mới
     const artistRequest = new ArtistRequest({
@@ -244,31 +209,11 @@ exports.updateArtistRequest = async (req, res) => {
       });
     }
 
-    // Xử lý upload ảnh mới (nếu có)
-    let profileImageUrl = existingRequest.profileImageUrl;
-    if (req.file) {
-      try {
-        const result = await cloudinary.uploader.upload(req.file.path, {
-          folder: 'profile_images',
-          width: 400,
-          height: 400,
-          crop: 'fill',
-          quality: 'auto'
-        });
-        
-        profileImageUrl = result.secure_url;
-        
-        // Xóa file tạm sau khi upload thành công
-        fs.unlink(req.file.path, (err) => {
-          if (err) console.error('Error deleting temp file:', err);
-        });
-      } catch (error) {
-        console.error('Error uploading to Cloudinary:', error);
-        return res.status(400).json({
-          success: false,
-          message: 'Lỗi khi tải ảnh lên. Vui lòng thử lại.'
-        });
-      }
+    // Lấy url ảnh từ middleware nếu có upload mới
+    let profileImageUrl = req.file && req.file.cloudinaryUrl ? req.file.cloudinaryUrl : undefined;
+    if (!profileImageUrl) {
+      // Nếu không upload mới thì lấy url cũ
+      profileImageUrl = existingRequest.profileImageUrl;
     }
 
     // Cập nhật request
