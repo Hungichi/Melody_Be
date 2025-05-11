@@ -15,6 +15,7 @@ const {
     searchSongs,
     getGenres,
     getFavoritePlaylist,
+    getSongsByArtistId,
 } = require('../controllers/songController');
 
 // Cấu hình multer cho upload song
@@ -70,6 +71,8 @@ router.get('/', getAllSongs);
 
 // Protected routes
 router.use(protect);
+
+router.get('/my-song', getSongsByArtistId);
 
 // Lấy playlist yêu thích của user (phải đặt trước /:id)
 router.get('/favorite-playlist', getFavoritePlaylist);

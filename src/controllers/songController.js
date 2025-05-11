@@ -587,3 +587,18 @@ exports.getFavoritePlaylist = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+// Lấy tất cả bài hát do artist đã upload
+exports.getSongsByArtistId = async (req, res) => {
+  try {
+    // Ưu tiên lấy id của chính artist đang đăng nhập
+    const artistId = req.query.artistId || (req.user && req.user._id);
+    if (!artistId) {
+      return res.status(400).json({ success: false, message: 'Thiếu artistId' });
+    }
+    const songs = await Song.find({ artist: artistId });
+    res.status(200).json({ success: true, data: songs });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
