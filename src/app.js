@@ -10,6 +10,7 @@ const songRoutes = require('./routes/songRoutes');
 const artistRequestRoutes = require('./routes/artistRequestRoutes');
 const playlistRoutes = require('./routes/playlistRoutes');
 const albumRoutes = require('./routes/albumRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 const app = express();
 
@@ -35,6 +36,7 @@ app.use('/api/songs', songRoutes);
 app.use('/api/artist-requests', artistRequestRoutes);
 app.use('/api/playlists', playlistRoutes);
 app.use('/api/albums', albumRoutes);
+app.use('/api/user', userRoutes);
 
 // Welcome route
 app.get('/', (req, res) => {
