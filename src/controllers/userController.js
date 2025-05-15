@@ -33,4 +33,43 @@ exports.updateUserDetail = async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
+};
+
+// Lấy danh sách tất cả artist
+exports.getAllArtists = async (req, res) => {
+  try {
+    const User = require('../models/User');
+    const artists = await User.find({ role: 'artist' }).select('-password');
+    res.status(200).json({ success: true, data: artists });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Lấy thông tin chi tiết artist theo id (userId), bao gồm userDetail, album và bài hát
+exports.getArtistDetailById = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const UserDetails = require('../models/UserDetails');
+    const Album = require('../models/Album');
+    const Song = require('../models/Song');
+
+    // Lấy user detail
+    const userDetail = await UserDetails.findOne({ userId });
+    // Lấy album của artist
+    const albums = await Album.find({ artist: userId });
+    // Lấy bài hát của artist
+    const songs = await Song.find({ artist: userId });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        userDetail,
+        albums,
+        songs
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 }; 
