@@ -35,12 +35,18 @@ exports.updateUserDetail = async (req, res) => {
   }
 };
 
-// Lấy danh sách tất cả artist
+// Lấy danh sách tất cả artist kèm albums
 exports.getAllArtists = async (req, res) => {
   try {
     const User = require('../models/User');
+    const Album = require('../models/Album');
     const artists = await User.find({ role: 'artist' }).select('-password');
-    res.status(200).json({ success: true, data: artists });
+    // Lấy albums cho từng artist
+    const artistsWithAlbums = await Promise.all(artists.map(async (artist) => {
+      const albums = await Album.find({ artist: artist._id });
+      return { ...artist.toObject(), albums };
+    }));
+    res.status(200).json({ success: true, data: artistsWithAlbums });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
