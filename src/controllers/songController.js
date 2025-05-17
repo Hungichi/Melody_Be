@@ -510,7 +510,7 @@ exports.searchSongs = async (req, res) => {
 
     // Thực hiện tìm kiếm với phân trang
     const songs = await Song.find(query)
-      .populate('artist', 'username stageName avatar')
+      .populate('artist', 'username stageName profileImage')
       .select('title artist genre duration releaseDate coverImageUrl plays likes comments')
       .skip(skip)
       .limit(parseInt(limit))
