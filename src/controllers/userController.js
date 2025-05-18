@@ -40,11 +40,14 @@ exports.getAllArtists = async (req, res) => {
   try {
     const User = require('../models/User');
     const Album = require('../models/Album');
+    const UserDetails = require('../models/UserDetails');
     const artists = await User.find({ role: 'artist' }).select('-password');
-    // Lấy albums cho từng artist
     const artistsWithAlbums = await Promise.all(artists.map(async (artist) => {
       const albums = await Album.find({ artist: artist._id });
-      return { ...artist.toObject(), albums };
+      const userDetail = await UserDetails.findOne({ userId: artist._id });
+      // Lấy profileImage từ UserDetails, nếu không có thì fallback sang User
+      const profileImage = userDetail && userDetail.profileImage ? userDetail.profileImage : artist.profileImage;
+      return { ...artist.toObject(), albums, profileImage };
     }));
     res.status(200).json({ success: true, data: artistsWithAlbums });
   } catch (error) {
