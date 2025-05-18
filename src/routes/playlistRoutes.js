@@ -5,7 +5,8 @@ const {
   createPlaylist,
   getMyPlaylists,
   addSongToPlaylist,
-  removeSongFromPlaylist
+  removeSongFromPlaylist,
+  deleteMyPlaylist
 } = require('../controllers/playlistController');
 
 // Yêu cầu đăng nhập cho tất cả route
@@ -19,5 +20,7 @@ router.get('/mine', getMyPlaylists);
 router.post('/:playlistId/add-song', addSongToPlaylist);
 // Xóa bài hát khỏi playlist
 router.post('/:playlistId/remove-song', removeSongFromPlaylist);
+// Xóa playlist của user
+router.delete('/:playlistId', deleteMyPlaylist);
 
 module.exports = router; 

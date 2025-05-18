@@ -9,12 +9,18 @@ const authRoutes = require('./routes/authRoutes');
 const songRoutes = require('./routes/songRoutes');
 const artistRequestRoutes = require('./routes/artistRequestRoutes');
 const playlistRoutes = require('./routes/playlistRoutes');
+const albumRoutes = require('./routes/albumRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 const app = express();
 
 // Middleware
 app.use(cors({
-    origin: ['http://localhost:3000', 'http://localhost:5173'],
+    origin: [
+        'https://melodies-qrd8atlgv-nguyens-projects-9f74018a.vercel.app',
+        'http://localhost:3000',
+        'http://localhost:5173'
+    ],
     credentials: true
 }));
 
@@ -33,6 +39,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/songs', songRoutes);
 app.use('/api/artist-requests', artistRequestRoutes);
 app.use('/api/playlists', playlistRoutes);
+app.use('/api/albums', albumRoutes);
+app.use('/api/user', userRoutes);
 
 // Welcome route
 app.get('/', (req, res) => {

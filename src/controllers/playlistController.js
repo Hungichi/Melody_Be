@@ -70,4 +70,22 @@ exports.removeSongFromPlaylist = async (req, res) => {
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
+};
+
+// Xóa playlist của user
+exports.deleteMyPlaylist = async (req, res) => {
+    try {
+        const { playlistId } = req.params;
+        // Tìm playlist thuộc về user
+        const playlist = await Playlist.findOne({ _id: playlistId, user: req.user._id });
+        if (!playlist) {
+            return res.status(404).json({ success: false, message: 'Playlist không tồn tại hoặc không thuộc về bạn' });
+        }
+        await playlist.deleteOne();
+        // Xóa reference trong user (nếu có lưu danh sách playlist trong user)
+        await User.findByIdAndUpdate(req.user._id, { $pull: { playlists: playlistId } });
+        res.status(200).json({ success: true, message: 'Xóa playlist thành công' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
 }; 
