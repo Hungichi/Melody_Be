@@ -21,6 +21,9 @@ exports.register = async (req, res) => {
       password
     });
 
+    // Tạo UserDetails tương ứng
+    await UserDetails.create({ userId: user._id });
+
     // Create token
     const token = user.getSignedJwtToken();
 
